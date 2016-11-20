@@ -40,7 +40,7 @@ class Weibo(object):
             "pagerefer": "http://login.sina.com.cn/sso/logout.php?entry=miniblog&r=http%3A%2F%2Fweibo.com%2Flogout.php%3Fbackurl%3D%252F",
             "prelt": 117,
             "pwencode": "rsa2",
-            "returntype": "META",
+            "returntype": "TEXT",
             "rsakv": self.rsakv,
             "savestate": 0,
             "servertime": self.servertime,
@@ -62,40 +62,10 @@ class Weibo(object):
             para['prelt'] = 2041
 
         data = self.r.post(self.login_url, data=para, headers=self.headers)
-        html = data.content.decode('gbk')
-        try:
-            info = re.findall(r'location\.replace\("(.*?)"', html)[0]
-        except:
-            info = re.findall(r'location\.replace\(\'(.*?)\'', html)[0]
-        if "retcode=0" not in info:
-            reason = re.search(r'reason=(.+?)(&|$)', html).group(1)
-            reason = urllib.unquote(str(reason))
-            try:
-                reason = reason.decode('gbk')
-            except:
-                reason = reason.decode('utf-8')
-            return False, reason.encode('utf-8')
-        self.ticket = re.findall(r'ticket=(.*?)&', info)[0]
-        '''
-        以下为需要的额外请求
-        '''
-        para = {
-            'savestate': int(time.time()),
-            'action': 'login',
-            'callback': 'sinaSSOController.doCrossDomainCallBack',
-            'client': 'ssologin.js(v1.4.18)',
-            'scriptId': 'ssoscript1'
-        }
-        self.r.get('http://passport.97973.com/sso/crossdomain', params=para, headers=self.headers)
-        para = {
-            '_': int(time.time()),
-            'action': 'login',
-            'callback': 'sinaSSOController.doCrossDomainCallBack',
-            'client': 'ssologin.js(v1.4.18)',
-            'scriptId': 'ssoscript1',
-        }
-
-        self.r.get('http://passport.weibo.cn/sso/crossdomain', params=para, headers=self.headers)
+        data = json.loads(data.text)
+        if data['retcode'] != "0":
+            return False, data['reason']
+        self.ticket = data['ticket']
         para={
             'callback':'sinaSSOController.callbackLoginStatus',
             'ticket': self.ticket,
