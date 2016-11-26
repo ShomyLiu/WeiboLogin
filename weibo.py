@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import requests, urllib
+import requests
 import base64, rsa, binascii
 import time, re, json, random
 
